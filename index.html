@@ -1,0 +1,190 @@
+
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Car Racing Game</title>
+<style>
+body {
+  margin: 0;
+  background: #111827;
+  color: white;
+  font-family: Arial;
+  text-align: center;
+}
+h2 { color: #38bdf8; }
+#game {
+  width: 320px;
+  height: 500px;
+  max-width: 95vw;
+  margin: auto;
+  background: #444;
+  border-left: 6px solid white;
+  border-right: 6px solid white;
+  position: relative;
+  overflow: hidden;
+}
+.car {
+  width: 42px;
+  height: 65px;
+  position: absolute;
+  border-radius: 10px;
+  border: 2px solid white;
+  box-sizing: border-box;
+}
+#player {
+  background: red;
+  bottom: 15px;
+  left: 135px;
+}
+.enemy { background: orange; }
+.car::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: 5px;
+  width: 28px;
+  height: 20px;
+  background: lightblue;
+  border-radius: 4px;
+}
+.line {
+  position: absolute;
+  width: 6px;
+  height: 55px;
+  background: white;
+  left: 157px;
+}
+button {
+  padding: 12px 22px;
+  margin: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: #0ea5e9;
+  color: white;
+  font-size: 17px;
+  cursor: pointer;
+}
+#message {
+  position: absolute;
+  inset: 0;
+  background: #000c;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+</style>
+</head>
+<body>
+
+<h2>🏎️ CAR RACING GAME</h2>
+<p id="score">Score: 0</p>
+
+<div id="game">
+  <div id="player" class="car"></div>
+  <div id="message">
+    <h2>🏁 CAR GAME</h2>
+    <button onclick="startGame()">START GAME</button>
+  </div>
+</div>
+
+<div>
+  <button onclick="move(-1)">⬅ LEFT</button>
+  <button onclick="move(1)">RIGHT ➡</button>
+</div>
+<p>Keyboard: ← →</p>
+
+<script>
+const game = document.getElementById("game");
+const player = document.getElementById("player");
+const message = document.getElementById("message");
+const scoreText = document.getElementById("score");
+
+let x = 139;
+let score = 0;
+let running = false;
+let enemies = [];
+let last = 0;
+let spawn = 0;
+let animation;
+
+function move(dir) {
+  if (!running) return;
+  x += dir * 25;
+  x = Math.max(0, Math.min(game.clientWidth - 42, x));
+  player.style.left = x + "px";
+}
+
+document.addEventListener("keydown", function(e) {
+  if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") move(-1);
+  if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") move(1);
+});
+
+function startGame() {
+  cancelAnimationFrame(animation);
+  enemies.forEach(e => e.el.remove());
+  enemies = [];
+  x = (game.clientWidth - 42) / 2;
+  player.style.left = x + "px";
+  score = 0;
+  spawn = 0;
+  last = 0;
+  running = true;
+  message.style.display = "none";
+  animation = requestAnimationFrame(loop);
+}
+
+function loop(t) {
+  if (!running) return;
+
+  const dt = Math.min((t - (last || t)) / 16.67, 2);
+  last = t;
+  score += dt * 0.15;
+  scoreText.textContent = "Score: " + Math.floor(score);
+
+  spawn += dt;
+  if (spawn > 45) {
+    spawn = 0;
+    const el = document.createElement("div");
+    el.className = "car enemy";
+    const left = Math.random() * (game.clientWidth - 42);
+    el.style.left = left + "px";
+    el.style.top = "-70px";
+    game.appendChild(el);
+    enemies.push({el, y: -70});
+  }
+
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const e = enemies[i];
+    e.y += 4 * dt;
+    e.el.style.top = e.y + "px";
+
+    if (
+      e.y + 65 > 500 - 15 &&
+      e.y < 500 - 15 &&
+      x < parseFloat(e.el.style.left) + 42 &&
+      x + 42 > parseFloat(e.el.style.left)
+    ) {
+      running = false;
+      message.style.display = "flex";
+      message.innerHTML =
+        "<h2>💥 GAME OVER</h2>" +
+        "<p>Score: " + Math.floor(score) + "</p>" +
+        '<button onclick="startGame()">PLAY AGAIN</button>';
+      return;
+    }
+
+    if (e.y > 510) {
+      e.el.remove();
+      enemies.splice(i, 1);
+    }
+  }
+
+  animation = requestAnimationFrame(loop);
+}
+</script>
+
+</body>
+</html>
